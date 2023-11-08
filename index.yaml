@@ -162,7 +162,7 @@ paths:
           content:
             application/json:
               schema:
-                type: integer
+                $ref: '#/components/schemas/users'
         404:
           description: Registration Error
           content:
@@ -175,6 +175,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /add_route:
     post:
       summary: Добавление нового пути
@@ -215,19 +216,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/messages'
+                $ref: '#/components/schemas/routes'
         404:
           description: Registration Route Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/messages'
+                $ref: '#/components/schemas/Error'
         500:
           description: Unexpected Error. Oops! Something went wrong! X/
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /read_all_routes_by_user_id:
       get:
           summary: Получение всех маршрутов пользователя
@@ -244,7 +246,7 @@ paths:
                   content:
                       application/json:
                         schema:
-                          $ref: '#/components/schemas/messages'       
+                          $ref: '#/components/schemas/routes'       
               404:
                   description: Error in retrieving routes
                   content:
@@ -262,7 +264,7 @@ paths:
           summary: Добавление новой поездки
           parameters:
               - name: route_id
-                description: id пути
+                description: id маршрута
                 in: query
                 required: true
                 schema:
@@ -285,7 +287,7 @@ paths:
                   content:
                       application/json:
                         schema:
-                          $ref: '#/components/schemas/messages'           
+                          $ref: '#/components/schemas/ride'           
               404:
                   description: Error in creating ride
                   content:
@@ -320,7 +322,7 @@ paths:
                   content:
                       application/json:
                         schema:
-                          $ref: '#/components/schemas/messages'          
+                          $ref: '#/components/schemas/ride'          
               404:
                   description: Error in adding a passenger
                   content:
@@ -335,7 +337,7 @@ paths:
                           $ref: '#/components/schemas/Error'  
   /read_ride_by_id:
       get:
-          summary: Получение всех маршрутов пользователя
+          summary: Получение описания поездки
           parameters:
               - name: ride_id
                 description: id пользователя
@@ -345,13 +347,13 @@ paths:
                   type: integer                        
           responses:
               "200":
-                  description: All routes
+                  description: Found a ride
                   content:
                       application/json:
                         schema:
-                          $ref: '#/components/schemas/messages'       
+                          $ref: '#/components/schemas/ride'       
               404:
-                  description: Error in retrieving routes
+                  description: Error in retrieving ride
                   content:
                       application/json:
                         schema:
@@ -396,42 +398,52 @@ components:
           type: string
         password:
           type: string
-    messages:
+    routes:
       type: array
       items:
-        $ref: '#/components/schemas/message'
-    message:
+        $ref: '#/components/schemas/route'
+    route:
       type: object
+      required:
+        - route_id
+        - creator_id
+        - route_title
+        - route_description
+        - route_start
+        - route_end
       properties:
-        id:
-          type: string
-        id_from:
-          type: string
-        id_to:
-          type: string
-        message:
-          type: string
-
-    post_id:
+        route_id:
           type: integer
-          description: Уникальный id стены       
-    walls:
-          type: array
-          items:
-              $ref: "#/components/schemas/wall"
-    wall:
-          type: object
-          required:
-              - id
-              - user_id
-              - post_text
-          properties:
-             id:
-                $ref: '#/components/schemas/post_id'   
-             user_id:
-                 type: integer
-             post_text:
-                 type: string
+        creator_id:
+          type: integer
+        route_title:
+          type: string
+        route_description:
+          type: string
+        route_start:
+          type: string
+        route_end:
+          type: string
+  
+    ride:
+      type: object
+      required:
+        - ride_id
+        - route_id
+        - creator_id
+        - ride_time
+        - ride_passangers
+      properties:
+        ride_id:
+          type: integer   
+        route_id:
+          type: integer
+        creator_id:
+          type: integer
+        ride_time:
+          type: integer
+        ride_passangers:
+          type: string
     Error:
       type: object
       required:
