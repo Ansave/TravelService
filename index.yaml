@@ -1,0 +1,448 @@
+openapi: '3.0.0'
+info:
+  version: '1.0.0'
+  title: 'Software-Arch Travel Service API'
+  description: API пользователя для второго (3го) домашнего задания по курсу Архитектура ПО
+servers:
+  - url: http://localhost:8080
+    description: Example server
+paths:
+  /search_by_name:
+    get:
+      summary: Поиск пользователей по маске имени и фамилии
+      parameters:
+      - name: first_name
+        description: Имя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: last_name
+        description: Фамилия
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Found users for the provided masks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/users'
+        404:
+          description: No users found for the provided mask
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected Error. Oops! Something went wrong! X/
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /search_by_login:
+    get:
+      summary: Поиск пользователя по логину
+      parameters:
+      - name: login
+        description: Логин
+        in: query
+        required: true
+        schema:
+          type: string      
+      responses:
+        '200':
+          description: Found users for the provided login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/users'
+        404:
+          description: No users found for the provided login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected Error. Oops! Something went wrong! X/
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /search_by_id:
+    get:
+      summary: Поиск пользователя по id
+      parameters:
+      - name: id
+        description: id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/user_id'     
+      responses:
+        '200':
+          description: Found users for the provided id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/users'
+        404:
+          description: No users found for the provided id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected Error. Oops! Something went wrong! X/
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth:
+    get:
+      summary: Проверка авторизации (аутентификации)
+      responses:
+        '200':
+          description: User ID
+          content:
+            application/json:
+              schema:
+               type: string
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                type: string
+  /user:
+    post:
+      summary: Добавление нового пользователя
+      parameters:
+      - name: first_name
+        description: Имя пользователя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: last_name
+        description: Фамилия пользователя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: email
+        description: email пользователя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: birthday
+        description: Дата дня рождения пользователя 
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: login
+        description: login пользователя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: password
+        description: пароль пользователя
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ID of freshly registered user
+          content:
+            application/json:
+              schema:
+                type: integer
+        404:
+          description: Registration Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected Error. Oops! Something went wrong! X/
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /add_route:
+    post:
+      summary: Добавление нового пути
+      parameters:
+      - name: creator_id
+        description: ID создателя
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: route_title
+        description: Название маршрута
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: route_description
+        description: Описание маршрута
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: route_start
+        description: Место старта
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: route_end
+        description: Место конца
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Id of route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messages'
+        404:
+          description: Registration Route Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messages'
+        500:
+          description: Unexpected Error. Oops! Something went wrong! X/
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /read_all_routes_by_user_id:
+      get:
+          summary: Получение всех маршрутов пользователя
+          parameters:
+              - name: user_id
+                description: id пользователя
+                in: query
+                required: true
+                schema:
+                  type: integer                        
+          responses:
+              "200":
+                  description: All routes
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/messages'       
+              404:
+                  description: Error in retrieving routes
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+              500:
+                  description: Unexpected Error. Oops! Something went wrong! X/
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+  /add_ride:
+      post:
+          summary: Добавление новой поездки
+          parameters:
+              - name: route_id
+                description: id пути
+                in: query
+                required: true
+                schema:
+                  type: integer
+              - name: creator_id
+                description: id создателя
+                in: query
+                required: true
+                schema:
+                  type: integer 
+              - name: ride_time
+                description: Время начала поездки
+                in: query
+                required: true
+                schema:
+                  type: integer                         
+          responses:
+              "200":
+                  description: Ride is created
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/messages'           
+              404:
+                  description: Error in creating ride
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+              500:
+                  description: Unexpected Error. Oops! Something went wrong! X/
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'         
+  /add_passenger:
+      post:
+          summary: Добавление нового пользователя к поездке
+          parameters:
+              - name: user_id
+                description: id пути
+                in: query
+                required: true
+                schema:
+                  type: integer
+              - name: ride_id
+                description: id пути
+                in: query
+                required: true
+                schema:
+                  type: integer
+          responses:
+              "200":
+                  description: Passener has been added
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/messages'          
+              404:
+                  description: Error in adding a passenger
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+              500:
+                  description: Unexpected Error. Oops! Something went wrong! X/
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'  
+  /read_ride_by_id:
+      get:
+          summary: Получение всех маршрутов пользователя
+          parameters:
+              - name: ride_id
+                description: id пользователя
+                in: query
+                required: true
+                schema:
+                  type: integer                        
+          responses:
+              "200":
+                  description: All routes
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/messages'       
+              404:
+                  description: Error in retrieving routes
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+              500:
+                  description: Unexpected Error. Oops! Something went wrong! X/
+                  content:
+                      application/json:
+                        schema:
+                          $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    user_id:
+      description: Уникальный id пользователя
+      type: integer
+    users:
+      type: array
+      items:
+        $ref: '#/components/schemas/user'
+    user:
+      type: object
+      required:
+        - id
+        - first_name
+        - last_name
+        - email
+        - birthday
+        - login
+        - password
+      properties:
+        id:
+          $ref: '#/components/schemas/user_id'
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        birthday:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+    messages:
+      type: array
+      items:
+        $ref: '#/components/schemas/message'
+    message:
+      type: object
+      properties:
+        id:
+          type: string
+        id_from:
+          type: string
+        id_to:
+          type: string
+        message:
+          type: string
+
+    post_id:
+          type: integer
+          description: Уникальный id стены       
+    walls:
+          type: array
+          items:
+              $ref: "#/components/schemas/wall"
+    wall:
+          type: object
+          required:
+              - id
+              - user_id
+              - post_text
+          properties:
+             id:
+                $ref: '#/components/schemas/post_id'   
+             user_id:
+                 type: integer
+             post_text:
+                 type: string
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          description: An Error Occured. Unexpected Error. Oops! Something went wrong! X/
+          type: string
+  securitySchemes:
+      basicAuth:     
+        type: http
+        scheme: basic
+security:
+  - basicAuth: []

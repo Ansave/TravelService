@@ -1,0 +1,197 @@
+version: '3.3'
+
+services:
+  traveldb-node-1:
+    build:
+      context: mariadb
+      dockerfile: Dockerfile
+    container_name: traveldb-node-1
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: traveldb
+      MYSQL_USER: traveluser
+      MYSQL_PASSWORD: traveluser
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - travel-network
+    ports:
+      - 3360:3306
+    volumes:
+      - traveldb-node-1-data:/var/lib/mysql
+
+  traveldb-node-2:
+    build:
+      context: mariadb
+      dockerfile: Dockerfile
+    container_name: traveldb-node-2
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: traveldb
+      MYSQL_USER: traveluser
+      MYSQL_PASSWORD: traveluser
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - travel-network
+    ports:
+      - 3361:3306
+    volumes:
+      - traveldb-node-2-data:/var/lib/mysql
+
+  traveldb-node-3:
+    build:
+      context: mariadb
+      dockerfile: Dockerfile
+    container_name: traveldb-node-3
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: traveldb
+      MYSQL_USER: traveluser
+      MYSQL_PASSWORD: traveluser
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - travel-network
+    ports:
+      - 3362:3306
+    volumes:
+      - traveldb-node-3-data:/var/lib/mysql
+      
+  proxysql:
+    build:
+      context: proxysql
+      dockerfile: Dockerfile
+    container_name: proxysql
+    command: >
+      --initial
+    volumes:
+      - proxysql-data:/var/lib/proxysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=traveluser --password=traveluser --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    depends_on:
+      - traveldb-node-1
+      - traveldb-node-2
+      - traveldb-node-3
+      
+    networks:
+      - travel-network
+    ports:
+      # Mysql Client Port
+      - "6033:6033"
+      # Mysql Admin Port
+      - "6032:6032"
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning 
+    networks:
+      - travel-network
+    volumes: 
+      - cache:/data
+
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+        ZOOKEEPER_INIT_LIMIT: 5
+    networks:
+      - travel-network
+
+  kafka-node-1:
+    image: wurstmeister/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '2181:2181'
+      - '9092:9092'
+    networks:
+      - travel-network
+    environment:
+        KAFKA_BROKER_ID: 1
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_ADVERTISED_HOST_NAME: kafka-node-1
+        ADVERTISED_PORT: 9092
+        ADVERTISED_HOST_NAME: kafka-node-1
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_CREATE_TOPICS: "event_server:1:1"
+
+  writer:
+    build:
+      context: ../
+      dockerfile: Docker/travel_service/Dockerfile
+    environment:
+      - DB_HOST=proxysql
+      - DB_PORT=6033
+      - DB_DATABASE=traveldb
+      - DB_LOGIN=traveluser
+      - DB_PASSWORD=traveluser
+      - CACHE=cache:6379
+      - QUEUE_HOST=kafka-node-1:9092
+      - QUEUE_TOPIC=event_server
+      - QUEUE_GROUP_ID=0
+    entrypoint: Software-Arch/travelservice/build/writer_main
+    networks:
+      - travel-network
+    depends_on:
+      - traveldb-node-1
+      - traveldb-node-2
+      - traveldb-node-3
+      - proxysql
+      - cache
+      - kafka-node-1
+
+  travel_network:
+    build:
+      context: ../
+      dockerfile: Docker/travel_service/Dockerfile
+    container_name: travel_service
+    environment:
+      - DB_HOST=proxysql
+      - DB_PORT=6033
+      - DB_LOGIN=traveluser
+      - DB_PASSWORD=traveluser
+      - DB_DATABASE=traveldb
+      - CACHE=cache:6379
+      - QUEUE_HOST=kafka-node-1:9092
+      - QUEUE_TOPIC=event_server
+      - QUEUE_GROUP_ID=0
+    ports:
+      - 8080:8080
+    networks:
+      - travel-network
+    depends_on:
+      - proxysql
+      - cache
+      - traveldb-node-1
+      - traveldb-node-2
+      - traveldb-node-3
+      # proxysql:
+      #   condition: service_healthy
+
+volumes:
+  traveldb-node-1-data:
+  traveldb-node-2-data:
+  traveldb-node-3-data:
+  proxysql-data:
+  cache:
+
+networks:
+  travel-network:
+    driver: "bridge"
+    external: false
